@@ -1,4 +1,4 @@
 api:
   port: 80
   host: '0.0.0.0'
-  auth_token: $API_AUTH_TOKEN|
+  auth_token: '$API_AUTH_TOKEN|12345'
