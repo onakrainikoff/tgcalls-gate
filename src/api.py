@@ -1,13 +1,24 @@
 from typing import Union
 from fastapi import FastAPI
+import uvicorn
 
 class Api:
     def __init__(self) -> None:
+        self.config = None
+        self.tts = None
+        self.tgcalls = None
+        
+        # !todo configuration
         self.app = FastAPI()
-        @self.app.get("/")
-        async def read_root():
-            return {"Hello": "World"}
 
-        @self.app.get("/items/{item_id}")
-        async def read_item(item_id: int, q: Union[str, None] = None):
-            return {"item_id": item_id, "q": q}
+        @self.app.post("/call")
+        async def call():
+            return "Not implemented"
+        
+        @self.app.get("/health")
+        @self.app.get("/")
+        async def health_check():
+            return {"health": "OK"}
+
+    def run(self):    
+        uvicorn.run(self.app, host="0.0.0.0", port=80)

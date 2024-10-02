@@ -1,7 +1,11 @@
-import uvicorn
+
 from api import Api
+from config import Config
 
 api = Api()
 
 if __name__ == "__main__":
-    uvicorn.run(api.app, host="0.0.0.0", port=80)
+    config = Config.load()
+    print(config["api"]['port'])
+    print(config["api"]['host'])
+    # api.run()
