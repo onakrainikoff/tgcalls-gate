@@ -3,8 +3,8 @@ from fastapi import FastAPI
 import uvicorn
 
 class Api:
-    def __init__(self) -> None:
-        self.config = None
+    def __init__(self, config) -> None:
+        self.config = config
         self.tts = None
         self.tgcalls = None
         
@@ -21,4 +21,4 @@ class Api:
             return {"health": "OK"}
 
     def run(self):    
-        uvicorn.run(self.app, host="0.0.0.0", port=80)
+        uvicorn.run(self.app, host=self.config['api.host'], port=self.config['api.port'])
