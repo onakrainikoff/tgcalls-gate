@@ -1,15 +1,13 @@
 from typing import Union
-
 from fastapi import FastAPI
 
-app = FastAPI()
+class Api:
+    def __init__(self) -> None:
+        self.app = FastAPI()
+        @self.app.get("/")
+        async def read_root():
+            return {"Hello": "World"}
 
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+        @self.app.get("/items/{item_id}")
+        async def read_item(item_id: int, q: Union[str, None] = None):
+            return {"item_id": item_id, "q": q}
