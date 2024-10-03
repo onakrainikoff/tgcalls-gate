@@ -4,6 +4,7 @@ import os, argparse, logging, yaml
 from typing import Optional
 from envyaml import EnvYAML
 from api import Api
+from tts import TtsService
 
 log = logging.getLogger()
 
@@ -33,7 +34,8 @@ def get_tg_calls(config:EnvYAML):
 def main():
     config = get_config()
     setup_logging(config)
-    log.info("Starting TgCalls-Gate")
+    log.info("Initialize TgCalls-Gate")
+    tts_service = TtsService(config)
     api = Api(config)
     api.run()
     

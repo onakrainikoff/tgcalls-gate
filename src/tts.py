@@ -4,10 +4,10 @@ from envyaml import EnvYAML
 from models import *
 
 log = logging.getLogger()
-torch.set_num_threads(4)
 
 class TtsSileroProvider:
     def __init__(self, lang: str, model_dir:str, model_file:str,  model_url: str, speaker:str, rate:int) -> None:
+        log.info("Initialize TtsSileroProvider for lang={lang}")
         self.device = torch.device('cpu')
         self.lang = lang
         self.model_dir = model_dir
@@ -29,16 +29,58 @@ class TtsSileroProvider:
         self.model.save_wav(text=text, speaker=self.speaker, sample_rate=self.rate, audio_path = audio_path)
 
 
-class Tts:
-    def __init__(self, config:EnvYAML=None) -> None:
-        self.data_dir = './data'
+class TtsService:
+    def __init__(self, config:EnvYAML) -> None:
+        log.info("Initialize TtsService")
+        self.config = config
+        torch.set_num_threads(self.config['tts.torch_threads'])
+        
+        self.data_dir = self.config['tts.data_dir']
+        os.makedirs(self.data_dir, exist_ok=True)
+
         self.data_audios_dir = os.path.join(self.data_dir, 'audios/')
         os.makedirs(self.data_audios_dir, exist_ok=True)
-        data_models_dir = os.path.join(self.data_dir, 'models/')
-        os.makedirs(data_models_dir, exist_ok=True)   
 
-       
+        if self.config.get('tts.use_cache'):     
+            self.data_audios_cache_dir = os.path.join(self.data_dir, 'audios_cache/')
+            os.makedirs(self.data_audios_cache_dir, exist_ok=True)
+        else:
+             self.data_audios_cache_dir = None
 
-    def process(self, text_to_speach: TextToSpeach) -> str:
-        pass
+        self.data_models_dir = os.path.join(self.data_dir, 'models/')
+        os.makedirs(self.data_models_dir, exist_ok=True)   
+
+        self.providers = {}
+        for lang_name in self.config['tts.langs']:
+            lang = f"tts.langs.{lang_name}"
+            provider = self.config[f"{lang}.provider"]
+            if provider == 'silero':
+                  self.providers[lang_name] = TtsSileroProvider(
+                       lang_name,
+                       os.path.join(self.data_models_dir, lang_name, provider)
+                       self.config[f"{lang}.model_file"],
+                       self.config[f"{lang}.model_url"],
+                       self.config[f"{lang}.speaker"],
+                       self.config[f"{lang}.rate"],
+                  )
+            else:
+                raise RuntimeError(f"Unsupported tts provider={provider}")
         
+       
+    def process(self, text_to_speach: TextToSpeach) -> str:
+        log.info("Process text_to_speach: {text_to_speach}")
+        audio_file_path = self.from_cache(text_to_speach)
+        if not audio_file_path:
+            provider = self.providers.get(text_to_speach.lang)
+            if not provider:
+                 raise RuntimeError(f"Unsupported lang={text_to_speach.lang}")
+            provider.process(text_to_speach.text, )
+
+        return audio_file_path
+    
+    def from_cache(self, text_to_speach):
+        return None
+              
+    
+    def to_cache(self, text_to_speach, audio_path):
+         return None

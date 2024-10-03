@@ -4,7 +4,9 @@ api:
   auth_token: '$API_AUTH_TOKEN|'
 
 tts:
-  data_dir: 'data'
+  data_dir: './data/tts/'
+  torch_threads: 4
+  use_cache: True
   langs:
     ru:
       provider: 'silero'

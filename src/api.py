@@ -13,7 +13,7 @@ class Api:
         self.config = config
         self.tts = None
         self.tgcalls = None
-        self.app = FastAPI(title="TgCalls-Gate.API")
+        self.app = FastAPI(title="TgCalls-Gate.Api")
     
         @self.app.post("/call", dependencies=[Depends(self.auth)])
         async def call(call_request: CallRequest):
