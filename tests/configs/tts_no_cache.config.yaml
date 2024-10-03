@@ -1,0 +1,17 @@
+tts:
+  data_dir: './data/tests/tts/'
+  torch_threads: 4
+  use_cache: False
+  langs:
+    ru:
+      provider: 'silero'
+      model_file: 'v4_ru.pt'
+      model_url: 'https://models.silero.ai/models/tts/ru/v4_ru.pt'
+      speaker: 'kseniya'
+      rate: 48000
+    en:
+      provider: 'silero'
+      model_file: 'v3_en.pt'
+      model_url: 'https://models.silero.ai/models/tts/en/v3_en.pt'
+      speaker: 'en_1'
+      rate: 48000

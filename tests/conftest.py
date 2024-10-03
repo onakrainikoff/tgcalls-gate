@@ -9,5 +9,9 @@ from envyaml import EnvYAML
 # log = logging.getLogger()
 
 @pytest.fixture()
-def config_for_tts():
+def config_tts():
     return EnvYAML('tests/configs/tts.config.yaml')
+
+@pytest.fixture()
+def config_tts_no_cache():
+    return EnvYAML('tests/configs/tts_no_cache.config.yaml')
