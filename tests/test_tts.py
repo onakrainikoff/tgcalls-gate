@@ -18,28 +18,28 @@ class TestTtsService:
     def test_tts_process_use_cache(self, config_tts):
         shutil.rmtree(os.path.join(config_tts['tts.data_dir'], "audios/"), ignore_errors=True)
         shutil.rmtree(os.path.join(config_tts['tts.data_dir'], "audios_cache/"), ignore_errors=True)
-        tts = TtsService(config_tts)
-        test_en_audio_file_path = tts.process('test_en', TextToSpeach(text='Hello world! It is test!', lang='en'))
+        tts_service = TtsService(config_tts)
+        test_en_audio_file_path = tts_service.process('test_en', TextToSpeach(text='Hello world! It is test!', lang='en'))
         assert os.path.isfile(test_en_audio_file_path)
-        test_ru_audio_file_path = tts.process('test_ru', TextToSpeach(text='Привет мир! Это тест!', lang='ru'))
+        test_ru_audio_file_path = tts_service.process('test_ru', TextToSpeach(text='Привет мир! Это тест!', lang='ru'))
         assert os.path.isfile(test_ru_audio_file_path)
         
         assert os.path.isdir(os.path.join(config_tts['tts.data_dir'], "audios_cache/"))
-        tts.providers = {}
+        tts_service.providers = {}
         os.remove(test_en_audio_file_path)
         os.remove(test_ru_audio_file_path)
-        test_en_audio_file_path = tts.process('test_en_2', TextToSpeach(text='Hello world! It is test!', lang='en'))
+        test_en_audio_file_path = tts_service.process('test_en_2', TextToSpeach(text='Hello world! It is test!', lang='en'))
         assert os.path.isfile(test_en_audio_file_path)
-        test_ru_audio_file_path = tts.process('test_ru_2', TextToSpeach(text='Привет мир! Это тест!', lang='ru'))
+        test_ru_audio_file_path = tts_service.process('test_ru_2', TextToSpeach(text='Привет мир! Это тест!', lang='ru'))
         assert os.path.isfile(test_ru_audio_file_path)
     
     @story('Process: use_cache=False')
     def test_tts_process_use_no_cache(self, config_tts_no_cache):
         shutil.rmtree(os.path.join(config_tts_no_cache['tts.data_dir'], "audios/"), ignore_errors=True)
         shutil.rmtree(os.path.join(config_tts_no_cache['tts.data_dir'], "audios_cache/"), ignore_errors=True)
-        tts = TtsService(config_tts_no_cache)
-        test_en_audio_file_path = tts.process('test_en', TextToSpeach(text='Hello world! It is test!', lang='en'))
+        tts_service = TtsService(config_tts_no_cache)
+        test_en_audio_file_path = tts_service.process('test_en', TextToSpeach(text='Hello world! It is test!', lang='en'))
         assert os.path.isfile(test_en_audio_file_path)
-        test_ru_audio_file_path = tts.process('test_ru', TextToSpeach(text='Привет мир! Это тест!', lang='ru'))
+        test_ru_audio_file_path = tts_service.process('test_ru', TextToSpeach(text='Привет мир! Это тест!', lang='ru'))
         assert os.path.isfile(test_ru_audio_file_path)
         assert not os.path.isdir(os.path.join(config_tts_no_cache['tts.data_dir'], "audios_cache/"))
