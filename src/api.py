@@ -4,21 +4,29 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 from envyaml import EnvYAML
-from models import *
+from .models import *
+from .tts import TtsService
 
 log = logging.getLogger()
 
 class Api:
-    def __init__(self, config:EnvYAML) -> None:
+    def __init__(self, config:EnvYAML, tts_service:TtsService ) -> None:
         self.config = config
-        self.tts = None
+        self.tts_service = tts_service
         self.tgcalls = None
         self.app = FastAPI(title="TgCalls-Gate.Api")
     
         @self.app.post("/call", dependencies=[Depends(self.auth)])
         async def call(call_request: CallRequest):
             log.info(f"Received call_request: {call_request}")
-            return Call(call_request=call_request)
+            call = Call(call_request=call_request)
+            if call_request.audio_url:
+                call.audio_file = call_request.audio_url    
+            elif call_request.text_to_speech:
+                call.audio_file = self.tts_service.process(call.id, call_request.text_to_speech)
+            else:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Either 'audio_url' or 'text_to_speech' must be present")
+            return call 
         
         @self.app.get("/health")
         @self.app.get("/")

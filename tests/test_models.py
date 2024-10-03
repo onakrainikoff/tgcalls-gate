@@ -13,20 +13,20 @@ class TestModels:
         id = get_id()
         assert id
         
-        text_to_speach = TextToSpeach(text='Test', lang='en')
+        text_to_speach = TextToSpeech(text='Test', lang='en')
         assert text_to_speach.text == 'Test'
         assert text_to_speach.lang == 'en'
 
         call_request = CallRequest(
             chat_id=1,
             audio_url='https://test.url.com',
-            text_to_speach=text_to_speach,
+            text_to_speech=text_to_speach,
             message_before={},
             message_after={}
         )
         assert call_request.chat_id == 1
         assert call_request.audio_url == 'https://test.url.com'
-        assert call_request.text_to_speach == text_to_speach
+        assert call_request.text_to_speech == text_to_speach
         assert call_request.message_before == {}
         assert call_request.message_after == {}
         assert call_request.send_audio_after_call

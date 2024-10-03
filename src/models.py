@@ -5,7 +5,7 @@ from enum import Enum
 import uuid
 
 __all__ = [
-        'TextToSpeach',
+        'TextToSpeech',
         'CallRequest',
         'CallResult',
         'Call',
@@ -14,14 +14,14 @@ __all__ = [
 
 get_id = lambda: str(uuid.uuid4())
 
-class TextToSpeach(BaseModel):
+class TextToSpeech(BaseModel):
     text: str
     lang: str
 
 class CallRequest(BaseModel):
     chat_id: int
     audio_url: Optional[str] = None 
-    text_to_speach: Optional[TextToSpeach] = None
+    text_to_speech: Optional[TextToSpeech] = None
     message_before: Optional[dict] = None
     message_after: Optional[dict] = None
     send_audio_after_call: bool = True
@@ -38,3 +38,4 @@ class Call(BaseModel):
     result: Optional[CallResult] = Field(default=None, validate_default=True)
     result_details: Optional[str] = None
     model_config = ConfigDict(use_enum_values=True)
+    audio_file: Optional[str] = None

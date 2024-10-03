@@ -64,7 +64,7 @@ class TtsService:
                 raise RuntimeError(f"Unsupported tts provider={provider}")
 
 
-    def process(self, audio_id:str, text_to_speach: TextToSpeach) -> str:
+    def process(self, audio_id:str, text_to_speach: TextToSpeech) -> str:
         log.info(f"Process audio_id={audio_id}, text_to_speach={text_to_speach}")
         audio_file_path = os.path.join(self.audios_dir, f"{audio_id}.wav")
         if self._try_copy_from_cache(text_to_speach, audio_file_path):
@@ -77,7 +77,7 @@ class TtsService:
         return audio_file_path       
     
 
-    def _try_copy_from_cache(self, text_to_speach:TextToSpeach, to_file_path:str) -> bool:
+    def _try_copy_from_cache(self, text_to_speach:TextToSpeech, to_file_path:str) -> bool:
         if self.config.get('tts.use_cache'):
            from_file_path = self._get_file_path_in_cache(text_to_speach)
            if os.path.isfile(from_file_path):
@@ -87,14 +87,14 @@ class TtsService:
         return False
               
     
-    def _save_to_cache(self, text_to_speach:TextToSpeach, from_file_path:str) -> None:
+    def _save_to_cache(self, text_to_speach:TextToSpeech, from_file_path:str) -> None:
         if self.config.get('tts.use_cache'):
             to_file_path = self._get_file_path_in_cache(text_to_speach)
             if not os.path.isfile(to_file_path):
                 shutil.copyfile(from_file_path, to_file_path)
     
 
-    def _get_file_path_in_cache(self, text_to_speach:TextToSpeach) -> str:
+    def _get_file_path_in_cache(self, text_to_speach:TextToSpeech) -> str:
         text_hash = hashlib.md5(text_to_speach.text.encode()).hexdigest()
         file_name = f"{text_to_speach.lang}-{text_hash}.wav"
         file_path = os.path.join(self.audios_cache_dir, file_name)
