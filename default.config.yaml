@@ -2,3 +2,32 @@ api:
   port: 80
   host: '0.0.0.0'
   auth_token: '$API_AUTH_TOKEN|12345'
+
+loggingq:
+  version: 1
+  disable_existing_loggers: true
+  formatters:
+    standard:
+      format: '%(asctime)s [%(processName)s: %(process)d] [%(threadName)s: %(thread)d] [%(levelname)s] [%(name)s] %(filename)s:%(funcName)s:%(lineno)d --- %(message)s'
+  handlers:
+    default:
+      class: logging.StreamHandler
+      formatter: standard
+      level: DEBUG
+      stream: ext://sys.stdout
+  loggers:
+    root:
+      handlers:
+      - default
+      level: INFO
+      propagate: false
+    uvicorn.access:
+      handlers:
+      - default
+      level: DEBUG
+      propagate: false
+    uvicorn.error:
+      handlers:
+      - default
+      level: DEBUG
+      propagate: false

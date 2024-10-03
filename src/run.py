@@ -1,11 +1,11 @@
 
-import os
-import argparse
+import logging.config
+import os, argparse, logging, yaml
 from typing import Optional
 from envyaml import EnvYAML
 from api import Api
 
-def load_config():
+def get_config():
     parser = argparse.ArgumentParser(description="TgCalls-Gate")
     parser.add_argument('-c','--config', metavar='', type=str, default=None, help='path to config.yaml file')
     args = parser.parse_args()
@@ -18,8 +18,20 @@ def load_config():
         config = EnvYAML('default.config.yaml')
     return config
 
+def setup_logging(config:EnvYAML):
+    if config.get('logging'):
+        logging.config.dictConfig(config['logging'])
+
+def get_tts(config:EnvYAML):
+    pass
+
+def get_tg_calls(config:EnvYAML):
+    pass
+
+
 if __name__ == "__main__":
-    config = load_config()
+    config = get_config()
+    setup_logging(config)
     api = Api(config)
     api.run()
     
