@@ -5,6 +5,8 @@ from typing import Optional
 from envyaml import EnvYAML
 from api import Api
 
+log = logging.getLogger()
+
 def get_config():
     parser = argparse.ArgumentParser(description="TgCalls-Gate")
     parser.add_argument('-c','--config', metavar='', type=str, default=None, help='path to config.yaml file')
@@ -28,10 +30,12 @@ def get_tts(config:EnvYAML):
 def get_tg_calls(config:EnvYAML):
     pass
 
-
-if __name__ == "__main__":
+def main():
     config = get_config()
     setup_logging(config)
+    log.info("Starting TgCalls-Gate")
     api = Api(config)
     api.run()
     
+if __name__ == "__main__":
+    main()

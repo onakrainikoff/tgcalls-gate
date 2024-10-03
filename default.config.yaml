@@ -1,16 +1,32 @@
 api:
   port: 80
   host: '0.0.0.0'
-  auth_token: '$API_AUTH_TOKEN|12345'
+  auth_token: '$API_AUTH_TOKEN|'
 
-loggingq:
+tts:
+  data_dir: 'data'
+  langs:
+    ru:
+      provider: 'silero'
+      model_file: 'v4_ru.pt'
+      model_url: 'https://models.silero.ai/models/tts/ru/v4_ru.pt'
+      speaker: 'kseniya'
+      rate: 48000
+    en:
+      provider: 'silero'
+      model_file: 'v3_en.pt'
+      model_url: 'https://models.silero.ai/models/tts/en/v3_en.pt'
+      speaker: 'en_1'
+      rate: 48000
+
+logging:
   version: 1
   disable_existing_loggers: true
   formatters:
     standard:
-      format: '%(asctime)s [%(processName)s: %(process)d] [%(threadName)s: %(thread)d] [%(levelname)s] [%(name)s] %(filename)s:%(funcName)s:%(lineno)d --- %(message)s'
+      format: '%(asctime)s [%(processName)s: %(process)d] [%(threadName)s: %(thread)d] [%(levelname)s] [%(name)s] %(filename)s:%(funcName)s:%(lineno)d - %(message)s'
   handlers:
-    default:
+    console:
       class: logging.StreamHandler
       formatter: standard
       level: DEBUG
@@ -18,16 +34,16 @@ loggingq:
   loggers:
     root:
       handlers:
-      - default
+      - console
       level: INFO
-      propagate: false
-    uvicorn.access:
+      propagate: false  
+    fastapi:
       handlers:
-      - default
-      level: DEBUG
-      propagate: false
-    uvicorn.error:
+      - console
+      level: INFO
+      propagate: false  
+    uvicorn:
       handlers:
-      - default
-      level: DEBUG
+      - console
+      level: INFO
       propagate: false
