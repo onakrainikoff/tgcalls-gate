@@ -1,22 +1,29 @@
-import logging, sys, uvicorn
+import logging, uvicorn
 from typing import Optional
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette import status
 from envyaml import EnvYAML
+from contextlib import asynccontextmanager
 from .models import *
 from .tts import TtsService
+from .tgcalls import TgCallsSevice
 
 log = logging.getLogger()
 
 class Api:
-    def __init__(self, config:EnvYAML, tts_service:TtsService ) -> None:
+    def __init__(self, config:EnvYAML, tts_service:TtsService, tgcalls_service:TgCallsSevice) -> None:
         log.info(f"Initialize Api")
         self.config = config
         self.tts_service = tts_service
-        self.tgcalls = None
+        self.tgcalls_service = tgcalls_service
         self.app = FastAPI(title="TgCalls-Gate.Api")
-    
+        @asynccontextmanager
+        async def lifespan(app: FastAPI):
+            await self.tgcalls_service.tg_calls_client.start()
+            yield
+        self.app.router.lifespan_context = lifespan
+
         @self.app.post("/call", dependencies=[Depends(self.auth)])
         async def call(call_request: CallRequest):
             log.info(f"Received call_request: {call_request}")

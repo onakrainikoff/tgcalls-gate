@@ -9,6 +9,7 @@ import os, argparse, logging, yaml
 from envyaml import EnvYAML
 from .api import Api
 from .tts import TtsService
+from .tgcalls import TgCallsSevice
 
 log = logging.getLogger()
 
@@ -40,7 +41,8 @@ def main():
     setup_logging(config)
     log.info("Initialize TgCalls-Gate")
     tts_service = TtsService(config)
-    api = Api(config)
+    tgcalls_service = TgCallsSevice(config)
+    api = Api(config, tts_service, tgcalls_service)
     api.run()
     
 if __name__ == "__main__":

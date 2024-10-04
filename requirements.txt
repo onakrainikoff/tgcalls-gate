@@ -4,3 +4,6 @@ envyaml == 1.10.211231
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.4.1+cpu
 numpy==2.1.1
+pyrogram==2.0.106
+tgcrypto==1.2.5
+py-tgcalls==2.0.4

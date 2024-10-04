@@ -1,8 +1,13 @@
+data_dir: './data/tts/'
 api:
   port: 80
   host: '0.0.0.0'
   auth_token: '$API_AUTH_TOKEN|'
-
+tgcalls:
+  client:
+    name: 'tgcalls-gate-client'
+    api_id: 
+    api_hash:
 tts:
   data_dir: './data/tts/'
   torch_threads: 4
