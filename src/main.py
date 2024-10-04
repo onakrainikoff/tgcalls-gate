@@ -1,10 +1,14 @@
+if __package__ is None:                  
+    import pathlib, sys
+    PROJECT_ROOT_DIR = pathlib.Path(__file__).resolve().parent
+    sys.path.insert(0, str(PROJECT_ROOT_DIR.parent))
+    __package__ = PROJECT_ROOT_DIR.name
 
 import logging.config
 import os, argparse, logging, yaml
-from typing import Optional
 from envyaml import EnvYAML
-from api import Api
-from tts import TtsService
+from .api import Api
+from .tts import TtsService
 
 log = logging.getLogger()
 
