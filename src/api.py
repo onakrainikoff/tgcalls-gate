@@ -35,7 +35,7 @@ class Api:
 
     async def auth(self, auth: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))):
         auth_token = self.config['api.auth_token']
-        if auth_token and auth_token != auth.credentials:
+        if auth_token and (not auth or not auth.credentials or auth_token != auth.credentials):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Bearer token missing or unknown")
     
     def run(self):
