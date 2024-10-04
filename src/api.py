@@ -11,6 +11,7 @@ log = logging.getLogger()
 
 class Api:
     def __init__(self, config:EnvYAML, tts_service:TtsService ) -> None:
+        log.info(f"Initialize Api")
         self.config = config
         self.tts_service = tts_service
         self.tgcalls = None
