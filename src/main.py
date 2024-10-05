@@ -41,7 +41,7 @@ def main():
     setup_logging(config)
     log.info("Initialize TgCalls-Gate")
     tts_service = TtsService(config)
-    tgcalls_service = TgCallsSevice(config)
+    tgcalls_service = TgCallsSevice(config, tts_service)
     api = Api(config, tts_service, tgcalls_service)
     api.run()
     

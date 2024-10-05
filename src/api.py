@@ -1,4 +1,4 @@
-import logging, uvicorn
+import logging, uvicorn, asyncio
 from typing import Optional
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -8,6 +8,8 @@ from contextlib import asynccontextmanager
 from .models import *
 from .tts import TtsService
 from .tgcalls import TgCallsSevice
+from pyrogram.handlers import MessageHandler
+from pyrogram.methods.utilities.idle import idle
 
 log = logging.getLogger()
 
@@ -18,11 +20,12 @@ class Api:
         self.tts_service = tts_service
         self.tgcalls_service = tgcalls_service
         self.app = FastAPI(title="TgCalls-Gate.Api")
+        
         @asynccontextmanager
         async def lifespan(app: FastAPI):
-            await self.tgcalls_service.tg_calls_client.start()
+            await self.tgcalls_service.connect()           
             yield
-        self.app.router.lifespan_context = lifespan
+        self.app.router.lifespan_context = lifespan        
 
         @self.app.post("/call", dependencies=[Depends(self.auth)])
         async def call(call_request: CallRequest):
@@ -35,9 +38,15 @@ class Api:
             else:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Either 'audio_url' or 'text_to_speech' must be present")
             return call 
+         
+        @self.app.post("/call/test/{chat_id}", dependencies=[Depends(self.auth)])
+        async def call_test(chat_id:int):
+            return await self.tgcalls_service.call_test(chat_id)
         
-        @self.app.get("/health")
+        # !todo make send message method
+
         @self.app.get("/")
+        @self.app.get("/health")
         async def health_check():
             return {"health": "OK"}
 

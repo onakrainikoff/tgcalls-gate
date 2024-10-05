@@ -4,7 +4,7 @@
 ### Run project
 ```
 docker build -t tgcalls-gate-dev -f docker/dev/Dockerfile .
-docker run -i -t --rm -v //$(PWD):/tgcalls-gate tgcalls-gate-dev python src/main.py
+docker run -i -t --rm -p 80:80 -v //$(PWD):/tgcalls-gate tgcalls-gate-dev python src/main.py
 ```
 
 ### Run tests
