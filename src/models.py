@@ -21,8 +21,8 @@ class TextToSpeech(BaseModel):
 
 
 class MessageRequest(BaseModel):
-    id: str = Field(default_factory=get_id)
-    created_at: datetime = Field(default_factory=datetime.now)
+    id: str = None
+    created_at: datetime = None
     chat_id: int
     text: Optional[str]
 
@@ -35,8 +35,8 @@ class MessageResponse(BaseModel):
 
 
 class CallRequest(BaseModel):
-    id: str = Field(default_factory=get_id) 
-    created_at: datetime = Field(default_factory=datetime.now)
+    id: str = None
+    created_at: datetime = None
     chat_id: int
     audio_url: Optional[str] = None 
     text_to_speech: Optional[TextToSpeech] = None

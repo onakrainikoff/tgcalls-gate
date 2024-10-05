@@ -42,7 +42,7 @@ class Api:
             return call_response 
          
         @self.app.post("/message/{chat_id}", dependencies=[Depends(self.auth)])
-        async def mwssage(chat_id:int, message_request: MessageRequest) -> MessageResponse:
+        async def message(chat_id:int, message_request: MessageRequest) -> MessageResponse:
             message_request.created_at = datetime.now()
             message_request.id = get_id()
             log.info(f"Request /message: chat_id={chat_id}, message_request={message_request}")
