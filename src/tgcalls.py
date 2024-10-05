@@ -39,10 +39,7 @@ class TgCallsSevice:
         try:
             await self.tg_calls_client.play(
                 chat_id,
-                MediaStream(
-                    audio_file,
-                    video_flags=MediaStream.Flags.IGNORE,
-                ),
+                MediaStream(audio_file, video_flags=MediaStream.Flags.IGNORE),
             )
             await event.wait()
             self.tg_calls_client.remove_handler(func)
@@ -53,7 +50,9 @@ class TgCallsSevice:
             call_response.status = Status.ERROR
         
         if call_request.send_audio_after_call:
-            await self.tg_client.send_message(chat_id, "call.call_request.send_audio_after_call")
+            async def progress(current, total):
+                log.info(f"Audio upload progress={current * 100 / total:.1f}%")
+            await self.tg_client.send_audio(chat_id, audio=call_request.text_to_speech.audio_file_path, progress=progress)
 
         if call_request.message_after:
             message_request = call_request.message_after
