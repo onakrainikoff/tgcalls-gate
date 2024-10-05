@@ -13,15 +13,6 @@ from .models import *
 
 log = logging.getLogger()
 
-class MyMessageHandler(Handler):
-    def __init__(self):
-        pass
-
-    async def check(self, client: Client, update: filters.Update):
-            print(f"on_message: {update}")
-            log.info(f"on_message: {update}")
-            return True
-
 class TgCallsSevice:
     def __init__(self, config:EnvYAML, tts_service:TtsService) -> None:
         log.info("Initialize TgCallsSevice")
@@ -30,47 +21,68 @@ class TgCallsSevice:
         os.makedirs(self.tgcalls_dir, exist_ok=True)
         self.tts_service = tts_service
 
+
     # !todo setting statuses
-    async def process(self, call:Call) -> None:
-        log.info(f"Process call={call}")
+    async def process_call(self, call_response:CallResponse) -> None:
+        call_request = call_response.call_request
+        log.info(f"Process call_request={call_request}")
         event = asyncio.Event()
-        chat_id = call.call_request.chat_id
-        if call.call_request.message_before:
-            await self.tg_client.send_message(chat_id, "call.call_request.message_before")
+        chat_id = call_request.chat_id
+        if call_request.message_before:
+            message_request = call_request.message_before
+            message_request.chat_id = chat_id
+            message_response = MessageResponse(message_request=message_request)
+            await self.process_message(message_response)
+       
+        audio_file = call_request.audio_url if call_request.audio_url else call_request.text_to_speech.audio_file_path
         func = self.tg_calls_client.add_handler(self._create_call_handler(chat_id, event))
         try:
             await self.tg_calls_client.play(
                 chat_id,
                 MediaStream(
-                    call.audio_file,
+                    audio_file,
                     video_flags=MediaStream.Flags.IGNORE,
                 ),
             )
-        except Exception as ex :
+            await event.wait()
+            self.tg_calls_client.remove_handler(func)
+            await self.tg_calls_client.leave_call(chat_id)
+        except Exception as ex:
             log.error(ex)
             self.tg_calls_client.remove_handler(func)
-            call.result = CallResult.ERROR
+            call_response.status = Status.ERROR
         
-        await event.wait()
-        self.tg_calls_client.remove_handler(func)
-        await self.tg_calls_client.leave_call(chat_id)
-        
-        if call.call_request.send_audio_after_call:
+        if call_request.send_audio_after_call:
             await self.tg_client.send_message(chat_id, "call.call_request.send_audio_after_call")
 
-        if call.call_request.message_after:
-            await self.tg_client.send_message(chat_id, "call.call_request.message_after")    
+        if call_request.message_after:
+            message_request = call_request.message_after
+            message_request.chat_id = chat_id
+            message_response = MessageResponse(message_request=message_request)
+            await self.process_message(message_response)
     
-    async def call_test(self, chat_id:int):
-        log.info(f"Create test call for chat_id={chat_id}")
-        test_text_to_speech= TextToSpeech(text="Hello! It`s test call by TgCalls-Gate ", lang='en')
-        test_call_request = CallRequest(chat_id=chat_id, text_to_speech=test_text_to_speech)
-        test_call = Call(call_request=test_call_request)
-        test_call.audio_file = self.tts_service.process(test_call.id, test_text_to_speech)
-        await self.process(test_call)
-        return test_call
 
-    # !todo sending messages
+    async def process_message(self, message_response:MessageResponse) -> None:
+        message_request=message_response.message_request
+        log.info(f"Process message_request={message_request}")
+        chat_id = message_request.chat_id
+        try:
+            await self.tg_client.send_message(chat_id, message_request.text)
+            message_response.status = Status.SUCCESS
+        except Exception as ex:
+            log.error(ex)
+            message_response.status = Status.ERROR
+            message_response.status_details = str(ex)
+
+
+    async def make_test_call(self, chat_id:int):
+        log.info(f"Create test call for chat_id={chat_id}")
+        text_to_speech= TextToSpeech(text="Hello! It`s test call by TgCalls-Gate ", lang='en')
+        call_request = CallRequest(chat_id=chat_id, text_to_speech=text_to_speech)
+        call_response = CallResponse(call_request=call_request)
+        self.tts_service.process(call_request.id, text_to_speech)
+        await self.process_call(call_response)
+        return call_response
     
     async def connect(self):
         log.info("Connecting to Telegramm")
@@ -85,18 +97,25 @@ class TgCallsSevice:
         self.tg_calls_client = PyTgCalls(self.tg_client)
         await self.tg_calls_client.start()
 
+    
     def _create_call_handler(self, chat_id: int, event:Event):
-        async def _updates(tg_call_client: PyTgCalls, update: Update):
+        async def _on_update(_, update: Update):
             if update.chat_id == chat_id:
                 event.set()
-        return _updates
+        return _on_update
+    
     
     def _create_message_handler(self):
         async def _on_message(_, message: Message):
             if message.chat.type == ChatType.PRIVATE:
+                chat_id = message.chat.id
                 if message.text == '!test':
-                    await self.call_test(message.chat.id)
+                    call_response = await self.make_test_call(chat_id)
+                    log.info(call_response)
                 elif message.text:
-                    await message.reply(f"Welcome to chat_id={message.chat.id}. Send !test to creat test call")
+                    message_request = MessageRequest(chat_id=chat_id, text=f"Welcome to chat_id={chat_id}. Send !test to creat test call")
+                    message_response= MessageResponse(message_request=message_request)
+                    await self.process_message(message_response=message_response)
+                    log.info(message_response)
         return _on_message
          

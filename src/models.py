@@ -4,38 +4,60 @@ from datetime import datetime
 from enum import Enum
 import uuid
 
-__all__ = [
-        'TextToSpeech',
-        'CallRequest',
-        'CallResult',
-        'Call',
-        'get_id'
-]
 
 get_id = lambda: str(uuid.uuid4())
 
-class TextToSpeech(BaseModel):
-    text: str
-    lang: str
 
-class CallRequest(BaseModel):
-    chat_id: int
-    audio_url: Optional[str] = None 
-    text_to_speech: Optional[TextToSpeech] = None
-    message_before: Optional[dict] = None
-    message_after: Optional[dict] = None
-    send_audio_after_call: bool = True
-
-class CallResult(Enum):
+class Status(Enum):
     SUCCESS = 'SUCCESS'
     FAILED = 'FAILED'
     ERROR = 'ERROR'
 
-class Call(BaseModel):
+
+class TextToSpeech(BaseModel):
+    text: str
+    lang: str
+    audio_file_path: Optional[str] = None
+
+
+class MessageRequest(BaseModel):
+    id: str = Field(default_factory=get_id)
+    created_at: datetime = Field(default_factory=datetime.now)
+    chat_id: int
+    text: Optional[str]
+
+
+class MessageResponse(BaseModel):
+    message_request: MessageRequest
+    status: Optional[Status] = Field(default=None, validate_default=True)
+    status_details: Optional[str] = None
+    model_config = ConfigDict(use_enum_values=True)
+
+
+class CallRequest(BaseModel):
     id: str = Field(default_factory=get_id) 
     created_at: datetime = Field(default_factory=datetime.now)
+    chat_id: int
+    audio_url: Optional[str] = None 
+    text_to_speech: Optional[TextToSpeech] = None
+    message_before: Optional[MessageRequest] = None
+    message_after: Optional[MessageRequest] = None
+    send_audio_after_call: bool = True
+
+
+class CallResponse(BaseModel):    
     call_request: CallRequest
-    result: Optional[CallResult] = Field(default=None, validate_default=True)
-    result_details: Optional[str] = None
+    status: Optional[Status] = Field(default=None, validate_default=True)
+    status_details: Optional[str] = None
     model_config = ConfigDict(use_enum_values=True)
-    audio_file: Optional[str] = None
+
+
+__all__ = [
+        'Status',
+        'TextToSpeech',
+        'CallRequest',
+        'CallResponse',
+        'MessageRequest',
+        'MessageResponse',
+        'get_id'
+]

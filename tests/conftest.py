@@ -1,12 +1,7 @@
-import pytest
+import pytest, logging
 from envyaml import EnvYAML
-# import sys
 
-# import logging
-# from random import random, randint
-
-
-# log = logging.getLogger()
+log = logging.getLogger()
 
 @pytest.fixture()
 def config_api():

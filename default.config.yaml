@@ -1,4 +1,4 @@
-data_dir: './data/tts/'
+data_dir: './data/'
 api:
   port: 80
   host: '0.0.0.0'
@@ -9,7 +9,6 @@ tgcalls:
     api_id: 
     api_hash:
 tts:
-  data_dir: './data/tts/'
   torch_threads: 4
   use_cache: True
   langs:

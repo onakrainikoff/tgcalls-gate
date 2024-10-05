@@ -1,4 +1,4 @@
-import logging, uvicorn, asyncio
+import logging, uvicorn, datetime
 from typing import Optional
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -27,33 +27,45 @@ class Api:
             yield
         self.app.router.lifespan_context = lifespan        
 
-        @self.app.post("/call", dependencies=[Depends(self.auth)])
-        async def call(call_request: CallRequest):
-            log.info(f"Received call_request: {call_request}")
-            call = Call(call_request=call_request)
-            if call_request.audio_url:
-                call.audio_file = call_request.audio_url    
-            elif call_request.text_to_speech:
-                call.audio_file = self.tts_service.process(call.id, call_request.text_to_speech)
-            else:
+        @self.app.post("/call/{chat_id}", dependencies=[Depends(self.auth)])
+        async def call(chat_id:int, call_request: CallRequest):
+            call_request.created_at = datetime.now()
+            call_request.id = get_id()
+            log.info(f"Requested /call: chat_id={chat_id}, call_request={call_request}")
+            call_response = CallResponse(chat_id=chat_id, call_request=call_request)
+            if call_request.text_to_speech:
+                self.tts_service.process(call_request.id, call_request.text_to_speech)
+            elif not call_request.audio_url:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Either 'audio_url' or 'text_to_speech' must be present")
-            return call 
+            await self.tgcalls_service.process_call(call_response)
+            return call_response 
          
+        @self.app.post("/message/{chat_id}", dependencies=[Depends(self.auth)])
+        async def mwssage(chat_id:int, message_request: MessageRequest):
+            message_request.created_at = datetime.now()
+            message_request.id = get_id()
+            log.info(f"Requested /message: chat_id={chat_id}, message_request={message_request}")
+            message_response = MessageResponse(chat_id=chat_id, message_request=message_request)
+            await self.tgcalls_service.process_message(message_response)
+            return message_response
+            
+        
         @self.app.post("/call/test/{chat_id}", dependencies=[Depends(self.auth)])
         async def call_test(chat_id:int):
-            return await self.tgcalls_service.call_test(chat_id)
+            log.info(f"Requested /call/test/: chat_id={chat_id}")
+            return await self.tgcalls_service.make_test_call(chat_id)
         
-        # !todo make send message method
-
         @self.app.get("/")
         @self.app.get("/health")
         async def health_check():
             return {"health": "OK"}
+        
 
     async def auth(self, auth: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False))):
         auth_token = self.config['api.auth_token']
         if auth_token and (not auth or not auth.credentials or auth_token != auth.credentials):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Bearer token missing or unknown")
+    
     
     def run(self):
         log.info("Starting TgCalls-Gate.API")

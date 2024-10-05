@@ -1,5 +1,5 @@
+data_dir: './data/tests/'
 tts:
-  data_dir: './data/tests/tts/'
   torch_threads: 4
   use_cache: True
   langs:

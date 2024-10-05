@@ -37,14 +37,14 @@ class TtsService:
         log.info("Initialize TtsService")
         self.config = config
         torch.set_num_threads(self.config['tts.torch_threads'])
-        self.audios_dir = os.path.join(self.config['tts.data_dir'], 'audios/')
+        self.audios_dir = os.path.join(self.config['data_dir'], 'tts/audios/')
         os.makedirs(self.audios_dir, exist_ok=True)
         if self.config.get('tts.use_cache'):     
-            self.audios_cache_dir = os.path.join(self.config['tts.data_dir'], 'audios_cache/')
+            self.audios_cache_dir = os.path.join(self.config['data_dir'], 'tts/audios_cache/')
             os.makedirs(self.audios_cache_dir, exist_ok=True)
         else:
              self.audios_cache_dir = None
-        self.models_dir = os.path.join(self.config['tts.data_dir'], 'models/')
+        self.models_dir = os.path.join(self.config['data_dir'], 'tts/models/')
         os.makedirs(self.models_dir, exist_ok=True)   
         self.providers = {}
         for lang_name in self.config['tts.langs']:
@@ -63,17 +63,17 @@ class TtsService:
                 raise RuntimeError(f"Unsupported tts provider={provider}")
 
 
-    def process(self, audio_id:str, text_to_speach: TextToSpeech) -> str:
+    def process(self, audio_id:str, text_to_speach: TextToSpeech) -> None:
         log.info(f"Process audio_id={audio_id}, text_to_speach={text_to_speach}")
         audio_file_path = os.path.join(self.audios_dir, f"{audio_id}.wav")
-        if self._try_copy_from_cache(text_to_speach, audio_file_path):
-            return audio_file_path
-        provider = self.providers.get(text_to_speach.lang)
-        if not provider:
-            raise RuntimeError(f"Unsupported lang={text_to_speach.lang}")
-        provider.process(text_to_speach.text, audio_file_path)
-        self._save_to_cache(text_to_speach,audio_file_path)
-        return audio_file_path       
+        if not self._try_copy_from_cache(text_to_speach, audio_file_path):       
+            provider = self.providers.get(text_to_speach.lang)
+            if not provider:
+                raise RuntimeError(f"Unsupported lang={text_to_speach.lang}")
+            provider.process(text_to_speach.text, audio_file_path)
+            self._save_to_cache(text_to_speach,audio_file_path)
+        text_to_speach.audio_file_path = audio_file_path
+
     
 
     def _try_copy_from_cache(self, text_to_speach:TextToSpeech, to_file_path:str) -> bool:
