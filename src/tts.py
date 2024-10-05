@@ -27,7 +27,7 @@ class TtsSileroProvider:
         self.model.to(self.device)
     
 
-    def process(self, text:str, audio_file_path:str):
+    def process(self, text:str, audio_file_path:str) -> None:
         self.model.save_wav(text=text, speaker=self.speaker, sample_rate=self.rate, audio_path = audio_file_path)
 
 
@@ -71,6 +71,7 @@ class TtsService:
             if not provider:
                 raise RuntimeError(f"Unsupported lang={text_to_speach.lang}")
             provider.process(text_to_speach.text, audio_file_path)
+            log.info(f"Generated audio file: {audio_file_path}")
             self._save_to_cache(text_to_speach,audio_file_path)
         text_to_speach.audio_file_path = audio_file_path
 
