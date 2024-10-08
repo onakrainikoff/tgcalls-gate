@@ -20,33 +20,33 @@ class TextToSpeech(BaseModel):
     audio_file_path: Optional[str] = None
 
 
-class MessageRequest(BaseModel):
-    id: str = None
-    created_at: datetime = None
-    chat_id: int
+class MessageContent(BaseModel):
     text: Optional[str]
 
 
-class MessageResponse(BaseModel):
-    message_request: MessageRequest
+class MessageEntity(BaseModel):
+    id: str = Field(default_factory=get_id, validate_default=True)
+    created_at: datetime = Field(default_factory=datetime.now, validate_default=True)
+    chat_id: int
+    content: MessageContent
     status: Optional[Status] = Field(default=None, validate_default=True)
     status_details: Optional[str] = None
     model_config = ConfigDict(use_enum_values=True)
 
 
-class CallRequest(BaseModel):
-    id: str = None
-    created_at: datetime = None
-    chat_id: int
-    audio_url: Optional[str] = None 
+class CallContent(BaseModel):    
     text_to_speech: Optional[TextToSpeech] = None
-    message_before: Optional[MessageRequest] = None
-    message_after: Optional[MessageRequest] = None
+    audio_url: Optional[str] = None 
+    message_before: Optional[MessageContent] = None
+    message_after: Optional[MessageContent] = None
     send_audio_after_call: bool = True
 
 
-class CallResponse(BaseModel):    
-    call_request: CallRequest
+class CallEntity(BaseModel):
+    id: str = Field(default_factory=get_id, validate_default=True)
+    created_at: datetime = Field(default_factory=datetime.now, validate_default=True)
+    chat_id: int
+    content: CallContent
     status: Optional[Status] = Field(default=None, validate_default=True)
     status_details: Optional[str] = None
     model_config = ConfigDict(use_enum_values=True)
@@ -55,9 +55,8 @@ class CallResponse(BaseModel):
 __all__ = [
         'Status',
         'TextToSpeech',
-        'CallRequest',
-        'CallResponse',
-        'MessageRequest',
-        'MessageResponse',
-        'get_id'
+        'CallContent',
+        'CallEntity',
+        'MessageContent',
+        'MessageEntity'
 ]

@@ -17,7 +17,7 @@ class TestModels:
         assert text_to_speach.text == 'Test'
         assert text_to_speach.lang == 'en'
 
-        call_request = CallRequest(
+        call_request = CallContent(
             chat_id=1,
             audio_url='https://test.url.com',
             text_to_speech=text_to_speach,
@@ -33,11 +33,11 @@ class TestModels:
         assert call_request.message_after == {}
         assert call_request.send_audio_after_call
 
-        call_response = CallResponse(
+        call_response = CallEntity(
             chat_id=1,
-            call_request=call_request
+            content=call_request
         )
-        assert call_response.call_request == call_request
+        assert call_response.content == call_request
         call_response.status = Status.ERROR
         call_response.status_details = 'Test Error'
         assert call_response.status == Status.ERROR
@@ -50,16 +50,16 @@ class TestModels:
         id = get_id()
         assert id
     
-        message_request = MessageRequest(chat_id=1, text='Test')
+        message_request = MessageContent(chat_id=1, text='Test')
         assert message_request.text == 'Test'
         assert message_request.chat_id == 1
         assert message_request.id
         assert message_request.created_at
 
-        message_response = MessageResponse(
-            message_request = message_request
+        message_response = MessageEntity(
+            content = message_request
         )
-        assert message_response.message_request == message_request
+        assert message_response.content == message_request
         message_response.status = Status.ERROR
         message_response.status_details = 'Test Error'
         assert message_response.status == Status.ERROR
