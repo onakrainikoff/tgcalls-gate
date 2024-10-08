@@ -1,14 +1,14 @@
-from pyrogram import Client, filters
+from pyrogram import Client
 from pyrogram.types import Message
 from pyrogram.enums import ChatType
 from pyrogram.handlers import MessageHandler
-from pyrogram.handlers.handler import Handler
 from pytgcalls import PyTgCalls
 from pytgcalls.types import MediaStream, Update
 from pytgcalls.exceptions import CallDeclined, TimedOutAnswer, CallDiscarded
-import logging, asyncio, os, datetime, traceback
+import logging, asyncio, os, traceback
 from asyncio import Event
 from envyaml import EnvYAML
+from typing import Union
 from .tts import TtsService
 from .models import *
 
@@ -39,17 +39,14 @@ class TgCallsSevice:
         call_handler = self.tg_calls_client.add_handler(self._create_call_handler(chat_id, event))
         try:
             await self.tg_calls_client.play(chat_id, MediaStream(audio_file, video_flags=MediaStream.Flags.IGNORE))
+            # todo timeout
             await event.wait()
         except (CallDeclined, TimedOutAnswer, CallDiscarded) as fail:
-            message = f"PocessCallFail: chat_id={chat_id}, id={entity.id}, fail={type(fail)}:{fail} "
-            log.info(message)
-            entity.status = Status.FAILED
-            entity.status_details = message
+            self._set_failed('PocessCallFail', entity, fail)
+            log.info(entity.status_details)
         except Exception as ex:
-            message = f"PocessCallError: chat_id={chat_id}, id={entity.id}, error={type(ex)}:{ex} "
-            log.error(message)
-            entity.status = Status.ERROR
-            entity.status_details = message
+            self._set_error('PocessCallError', entity, ex)
+            log.error(entity.status_details)
             return
         finally:
             self.tg_calls_client.remove_handler(call_handler)
@@ -63,15 +60,13 @@ class TgCallsSevice:
             try:
                 await self.tg_client.send_audio(chat_id, audio=audio_file, progress=self._create_send_audio_handler)
             except Exception as ex:
-                message = f"PocessCallSendAudioError: chat_id={chat_id}, id={entity.id}, error={type(ex)}:{ex} "
-                log.error(message)
-                entity.status = Status.ERROR
-                entity.status_details = message
+                self._set_error('PocessCallSendAudioError', entity, ex)
+                log.error(entity.status_details)
                 return
         if content.message_after:
             message_entity = MessageEntity(chat_id=chat_id, content=content.message_after)
             await self.process_message(message_entity)
-            if message_entity.status == Status.ERROR:
+            if message_entity.status == Status.ERROR:                
                 entity.status = Status.ERROR
                 entity.status_details = message_entity.status_details
                 return
@@ -85,11 +80,8 @@ class TgCallsSevice:
             await self.tg_client.send_message(chat_id, content.text)
             entity.status = Status.SUCCESS
         except Exception as ex:
-            message = f"PocessMessageError: chat_id={chat_id}, id={entity.id}, error={type(ex)}:{ex} "
-            log.error(message)
-            entity.status = Status.ERROR
-            entity.status_details = message
-
+            self._set_error('PocessMessageError', entity, ex)
+            log.error(entity.status_details)
     
     async def make_test_call(self, chat_id:int) -> CallEntity:
         log.info(f"Create test call for chat_id={chat_id}")
@@ -115,7 +107,16 @@ class TgCallsSevice:
         await self.tg_calls_client.start()
         log.info("Connection to Telegram is successful")
 
-    
+    def _set_error(self, error:str, entity: Union[CallEntity, MessageEntity], exeption: Exception):
+        message = f"{error}: chat_id={entity.chat_id}, id={entity.id}, error={type(exeption)}:{exeption} "
+        entity.status = Status.ERROR
+        entity.status_details = message
+
+    def _set_failed(self, fail:str, entity: Union[CallEntity, MessageEntity], exeption: Exception):
+        message = f"{fail}: chat_id={entity.chat_id}, id={entity.id}, error={type(exeption)}:{exeption} "
+        entity.status = Status.FAILED
+        entity.status_details = message
+
     def _create_call_handler(self, chat_id: int, event:Event):
         async def _on_update(_, update: Update):
             if update.chat_id == chat_id and (not event.is_set):                
