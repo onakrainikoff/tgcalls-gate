@@ -35,7 +35,8 @@ class Api:
                 try:
                     self.tts_service.process(entity.id, content.text_to_speech)
                 except Exception as ex:
-                    pass
+                    entity.status = Status.ERROR
+                    entity.status_details = f"PocessTextToSpeechError: chat_id={entity.chat_id}, id={entity.id}, error={type(ex)}:{ex} "
             elif not content.audio_url:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Either 'audio_url' or 'text_to_speech' must be present")
             await self.tgcalls_service.process_call(entity)

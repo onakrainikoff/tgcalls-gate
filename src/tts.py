@@ -60,7 +60,7 @@ class TtsService:
                        self.config[f"{lang}.rate"],
                     )
             else:
-                raise RuntimeError(f"TextToSpeech Error: tts provider={provider}")
+                raise RuntimeError(f"TextToSpeech Error: unsupported tts provider={provider}")
 
 
     def process(self, audio_id:str, text_to_speach: TextToSpeech) -> None:
@@ -69,7 +69,7 @@ class TtsService:
         if not self._try_copy_from_cache(text_to_speach, audio_file_path):       
             provider = self.providers.get(text_to_speach.lang)
             if not provider:
-                raise RuntimeError(f"PocessTextToSpeechError: unsupported lang={text_to_speach.lang}")
+                raise RuntimeError(f"unsupported lang={text_to_speach.lang}")
             provider.process(text_to_speach.text, audio_file_path)
             log.info(f"Generated audio file: {audio_file_path}")
             self._save_to_cache(text_to_speach,audio_file_path)
