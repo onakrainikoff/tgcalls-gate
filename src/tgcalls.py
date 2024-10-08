@@ -5,7 +5,8 @@ from pyrogram.handlers import MessageHandler
 from pyrogram.handlers.handler import Handler
 from pytgcalls import PyTgCalls
 from pytgcalls.types import MediaStream, Update
-import logging, asyncio, os
+from pytgcalls.exceptions import CallDeclined, TimedOutAnswer, CallDiscarded, NotInCallError
+import logging, asyncio, os, datetime, traceback
 from asyncio import Event
 from envyaml import EnvYAML
 from .tts import TtsService
@@ -41,14 +42,18 @@ class TgCallsSevice:
                 await event.wait()
                 self.tg_calls_client.remove_handler(call_handler)
                 await self.tg_calls_client.leave_call(chat_id)
-            finally:
+            except Exception as ex:
+                log.error(f"Processing error for call_request.id={call_request.id}:{type(ex)}={ex}")
+                traceback.print_exception(ex)
+                call_response.status = Status.ERROR
+                message_response.status_details = f"{type(ex)}={ex}"
                 # !todo check call decline
                 self.tg_calls_client.remove_handler(call_handler)
             
-            if call_request.send_audio_after_call:
-                # !todo logging?
-                # !todo audio_url?
-                await self.tg_client.send_audio(chat_id, audio=call_request.text_to_speech.audio_file_path, progress=self._create_send_audio_handler)
+            # if call_request.send_audio_after_call:
+            #     # !todo logging?
+            #     # !todo audio_url?
+            #     await self.tg_client.send_audio(chat_id, audio=call_request.text_to_speech.audio_file_path, progress=self._create_send_audio_handler)
 
             if call_request.message_after:
                 message_request = call_request.message_after
@@ -56,9 +61,11 @@ class TgCallsSevice:
                 message_response = MessageResponse(message_request=message_request)
                 await self.process_message(message_response)
         except Exception as ex:
-            log.error(f"Processing error for call_request.id={call_request.id}: {ex}")
+            log.error(f"Processing error for call_request.id={call_request.id}:{type(ex)}={ex}")
+            traceback.print_exception(ex)
             call_response.status = Status.ERROR
-            message_response.status_details = str(ex)
+            message_response.status_details = f"{type(ex)}={ex}"
+
 
     async def process_message(self, message_response:MessageResponse) -> None:
         message_request=message_response.message_request
@@ -76,7 +83,7 @@ class TgCallsSevice:
     async def make_test_call(self, chat_id:int) -> CallResponse:
         log.info(f"Create test call for chat_id={chat_id}")
         text_to_speech= TextToSpeech(text="Hello! It`s test call by TgCalls-Gate ", lang='en')
-        call_request = CallRequest(chat_id=chat_id, text_to_speech=text_to_speech)
+        call_request = CallRequest(id=get_id(), chat_id=chat_id, text_to_speech=text_to_speech)
         call_response = CallResponse(call_request=call_request)
         self.tts_service.process(call_request.id, text_to_speech)
         await self.process_call(call_response)
@@ -100,7 +107,8 @@ class TgCallsSevice:
     
     def _create_call_handler(self, chat_id: int, event:Event):
         async def _on_update(_, update: Update):
-            if update.chat_id == chat_id:
+            log.info(f">>>> call_handler: {update}")
+            if update.chat_id == chat_id:                
                 # !todo check update type?
                 # !todo check even?
                 event.set()
