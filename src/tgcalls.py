@@ -41,6 +41,8 @@ class TgCallsSevice:
             await self.tg_calls_client.play(chat_id, MediaStream(audio_file, video_flags=MediaStream.Flags.IGNORE))
             # todo timeout
             await event.wait()
+            entity.status = Status.SUCCESS
+            log.debug(">>>>>>>>>>>>>>>>> call end")
         except (CallDeclined, TimedOutAnswer, CallDiscarded) as fail:
             self._set_failed('PocessCallFail', entity, fail)
             log.info(entity.status_details)
@@ -49,20 +51,23 @@ class TgCallsSevice:
             log.error(entity.status_details)
             return
         finally:
+            log.debug(">>>>>>>>>>>>>>>>> finally start")
             self.tg_calls_client.remove_handler(call_handler)
             event.set()
             try:
                 await self.tg_calls_client.leave_call(chat_id)
             except:
                 pass
-        if content.send_audio_after_call:
-            # !todo audio_url?
-            try:
-                await self.tg_client.send_audio(chat_id, audio=audio_file, progress=self._create_send_audio_handler)
-            except Exception as ex:
-                self._set_error('PocessCallSendAudioError', entity, ex)
-                log.error(entity.status_details)
-                return
+            log.debug(">>>>>>>>>>>>>>>>> finally start")
+        # if content.send_audio_after_call:
+        #     # !todo audio_url?
+        #     try:
+        #         await self.tg_client.send_audio(chat_id, audio=audio_file, progress=self._create_send_audio_handler)
+        #     except Exception as ex:
+        #         self._set_error('PocessCallSendAudioError', entity, ex)
+        #         log.error(entity.status_details)
+        #         return
+        log.debug(">>>>>>>>>>>>>>>>> end")
         if content.message_after:
             message_entity = MessageEntity(chat_id=chat_id, content=content.message_after)
             await self.process_message(message_entity)
@@ -82,16 +87,17 @@ class TgCallsSevice:
         except Exception as ex:
             self._set_error('PocessMessageError', entity, ex)
             log.error(entity.status_details)
-    
+
+
     async def make_test_call(self, chat_id:int) -> CallEntity:
         log.info(f"Create test call for chat_id={chat_id}")
         text_to_speech= TextToSpeech(text="Hello! It`s test call by TgCalls-Gate ", lang='en')
-        content = CallContent(chat_id=chat_id, text_to_speech=text_to_speech)
-        entity = CallEntity(content=content)
+        content = CallContent(text_to_speech=text_to_speech)
+        entity = CallEntity(chat_id=chat_id,content=content)
         self.tts_service.process(entity.id, text_to_speech)
         await self.process_call(entity)
         return entity
-    
+
 
     async def connect(self) -> None:
         log.info("Connecting to Telegramm")
@@ -107,38 +113,46 @@ class TgCallsSevice:
         await self.tg_calls_client.start()
         log.info("Connection to Telegram is successful")
 
+
     def _set_error(self, error:str, entity: Union[CallEntity, MessageEntity], exeption: Exception):
-        message = f"{error}: chat_id={entity.chat_id}, id={entity.id}, error={type(exeption)}:{exeption} "
+        message = f"{error}: chat_id={entity.chat_id}, id={entity.id}, error={type(exeption)}:{exeption}"
         entity.status = Status.ERROR
         entity.status_details = message
 
+
     def _set_failed(self, fail:str, entity: Union[CallEntity, MessageEntity], exeption: Exception):
-        message = f"{fail}: chat_id={entity.chat_id}, id={entity.id}, error={type(exeption)}:{exeption} "
+        message = f"{fail}: chat_id={entity.chat_id}, id={entity.id}, error={type(exeption)}:{exeption}"
         entity.status = Status.FAILED
         entity.status_details = message
 
+
     def _create_call_handler(self, chat_id: int, event:Event):
-        async def _on_update(_, update: Update):
-            if update.chat_id == chat_id and (not event.is_set):                
+        async def _on_call_update(_, update: Update):
+            log.debug(f"on_call_update: chat_id={chat_id}, update={update}")
+            if update.chat_id == chat_id and (not event.is_set()):                
                 event.set()
-        return _on_update
-    
-    
+        return _on_call_update
+
+
     def _create_message_handler(self):
-        async def _on_message(_, message: Message):
-            if message.chat.type == ChatType.PRIVATE:
-                chat_id = message.chat.id
-                if message.text == '!test':
-                    call_entity = await self.make_test_call(chat_id)
-                    log.debug(f"Response: {call_entity}")
-                elif message.text:
-                    message_entity= MessageEntity(chat_id=chat_id, content=MessageContent(text=f"Welcome to chat_id={chat_id}. Send !test to creat test call"))
-                    await self.process_message(message_entity)
-                    log.debug(f"Response: {message_entity}")
-        return _on_message
+        async def _on_message_update(_, message: Message):
+            try:
+                if message.chat.type == ChatType.PRIVATE and message.text:
+                    chat_id = message.chat.id
+                    log.debug(f"on_message_update: chat_id={chat_id}, message={message}")
+                    if message.text == '!test':
+                        call_entity = await self.make_test_call(chat_id)
+                        log.debug(f"response for test call: chat_id={chat_id}, call_entity={call_entity}")
+                    else:
+                        message_entity= MessageEntity(chat_id=chat_id, content=MessageContent(text=f"Welcome to chat_id={chat_id}. Send !test to creat test call"))
+                        await self.process_message(message_entity)
+                        log.debug(f"response for private message: chat_id={chat_id}, message_entity={message_entity}")
+            except Exception as ex:
+                log.error(f"{type(ex)}:{ex}")
+        return _on_message_update
     
     
     def _create_send_audio_handler(self, chat_id:int):
         async def _on_sendong_audio(current, total):
-            log.info(f"Sending audio after call for {chat_id}: progress={current * 100 / total:.1f}%")         
+            log.info(f"Sending audio after call: chat_id={chat_id}, progress={current * 100 / total:.1f}%")         
         return _on_sendong_audio

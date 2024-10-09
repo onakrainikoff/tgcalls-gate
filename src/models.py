@@ -53,10 +53,11 @@ class CallEntity(BaseModel):
 
 
 __all__ = [
+        'get_id',
         'Status',
         'TextToSpeech',
         'CallContent',
         'CallEntity',
         'MessageContent',
-        'MessageEntity'
+        'MessageEntity',
 ]

@@ -10,57 +10,59 @@ class TestModels:
    
     @story("Init call models")
     def test_call_models_init(self):
-        id = get_id()
-        assert id
-        
-        text_to_speach = TextToSpeech(text='Test', lang='en')
-        assert text_to_speach.text == 'Test'
-        assert text_to_speach.lang == 'en'
-
-        call_request = CallContent(
-            chat_id=1,
-            audio_url='https://test.url.com',
-            text_to_speech=text_to_speach,
-            message_before={},
-            message_after={}
-        )
-        assert call_request.chat_id == 1
-        assert call_request.id
-        assert call_request.created_at
-        assert call_request.audio_url == 'https://test.url.com'
-        assert call_request.text_to_speech == text_to_speach
-        assert call_request.message_before == {}
-        assert call_request.message_after == {}
-        assert call_request.send_audio_after_call
-
-        call_response = CallEntity(
-            chat_id=1,
-            content=call_request
-        )
-        assert call_response.content == call_request
-        call_response.status = Status.ERROR
-        call_response.status_details = 'Test Error'
-        assert call_response.status == Status.ERROR
-        assert call_response.status_details == 'Test Error'
+        with step('Check id generation'):
+            id = get_id()
+            assert id
+        with step('Check TextToSpeech'):
+            text_to_speach = TextToSpeech(text='Test', lang='en')
+            assert text_to_speach.text == 'Test'
+            assert text_to_speach.lang == 'en'    
+        with step('Check CallContent'):
+            content = CallContent(
+                audio_url='https://test.url.com',
+                text_to_speech=text_to_speach,
+                message_before=MessageContent(text='Text before'),
+                message_after=MessageContent(text='Text after')
+            )
+            assert content.audio_url == 'https://test.url.com'
+            assert content.text_to_speech == text_to_speach
+            assert content.message_before.text == 'Text before'
+            assert content.message_after.text == 'Text after'
+            assert content.send_audio_after_call
+        with step('Check CallEntity'):
+            entity = CallEntity(
+                chat_id=1,
+                content=content
+            )
+            assert entity.chat_id == 1
+            assert entity.id
+            assert entity.created_at
+            assert entity.content == content
+            entity.status = Status.ERROR
+            entity.status_details = 'Test Error'
+            assert entity.status == Status.ERROR
+            assert entity.status_details == 'Test Error'
 
 
 
     @story("Init message models")
     def test_message_models_init(self):
-        id = get_id()
-        assert id
-    
-        message_request = MessageContent(chat_id=1, text='Test')
-        assert message_request.text == 'Test'
-        assert message_request.chat_id == 1
-        assert message_request.id
-        assert message_request.created_at
-
-        message_response = MessageEntity(
-            content = message_request
-        )
-        assert message_response.content == message_request
-        message_response.status = Status.ERROR
-        message_response.status_details = 'Test Error'
-        assert message_response.status == Status.ERROR
-        assert message_response.status_details == 'Test Error'
+        with step('Check id generation'):
+            id = get_id()
+            assert id
+        with step('Check id MessageContent'):
+            content = MessageContent(chat_id=1, text='Test')
+            assert content.text == 'Test'
+        with step('Check id MessageEntity'):
+            entity = MessageEntity(
+                chat_id=1,
+                content = content
+            )
+            assert entity.chat_id == 1
+            assert entity.id
+            assert entity.created_at
+            assert entity.content == content
+            entity.status = Status.ERROR
+            entity.status_details = 'Test Error'
+            assert entity.status == Status.ERROR
+            assert entity.status_details == 'Test Error'
