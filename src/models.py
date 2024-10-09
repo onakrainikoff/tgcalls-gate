@@ -21,7 +21,8 @@ class TextToSpeech(BaseModel):
 
 
 class MessageContent(BaseModel):
-    text: Optional[str]
+    text: Optional[str] = None
+    photo_url: Optional[str] = None
 
 
 class MessageEntity(BaseModel):

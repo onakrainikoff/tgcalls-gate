@@ -46,6 +46,8 @@ class Api:
         @self.app.post("/message/{chat_id}", dependencies=[Depends(self.auth)])
         async def message(chat_id:int, content: MessageContent) -> MessageEntity:
             log.info(f"Request /message: chat_id={chat_id}, content={content}")
+            if not content.text and not content.photo_url:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Either 'text' or 'photo_url' must be present")
             entity = MessageEntity(chat_id=chat_id, content=content)
             await self.tgcalls_service.process_message(entity)
             log.info(f"Response: chat_id={chat_id}, id={entity.id}, status={entity.status}, status_details={entity.status_details}")

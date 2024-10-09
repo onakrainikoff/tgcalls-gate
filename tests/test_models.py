@@ -51,8 +51,9 @@ class TestModels:
             id = get_id()
             assert id
         with step('Check id MessageContent'):
-            content = MessageContent(chat_id=1, text='Test')
+            content = MessageContent(chat_id=1, text='Test', photo_url='https://test.url.com')
             assert content.text == 'Test'
+            assert content.photo_url == 'https://test.url.com'
         with step('Check id MessageEntity'):
             entity = MessageEntity(
                 chat_id=1,

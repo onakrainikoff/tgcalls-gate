@@ -42,32 +42,32 @@ class TgCallsSevice:
             # todo timeout
             await event.wait()
             entity.status = Status.SUCCESS
-            log.debug(">>>>>>>>>>>>>>>>> call end")
         except (CallDeclined, TimedOutAnswer, CallDiscarded) as fail:
-            self._set_failed('PocessCallFail', entity, fail)
-            log.info(entity.status_details)
+            entity.status = Status.FAILED
+            entity.status_details = f"PocessCallFail: {type(fail)}:{fail}"
+            log.info(f"PocessCallFail: chat_id={entity.chat_id}, id={entity.id}, error={type(fail)}:{fail}")
         except Exception as ex:
-            self._set_error('PocessCallError', entity, ex)
-            log.error(entity.status_details)
+            entity.status = Status.ERROR
+            entity.status_details = f"PocessCallError: {type(ex)}:{ex}"
+            log.error(f"PocessCallError: chat_id={entity.chat_id}, id={entity.id}, error={type(ex)}:{ex}")
             return
         finally:
-            log.debug(">>>>>>>>>>>>>>>>> finally start")
             self.tg_calls_client.remove_handler(call_handler)
             event.set()
             try:
                 await self.tg_calls_client.leave_call(chat_id)
             except:
                 pass
-            log.debug(">>>>>>>>>>>>>>>>> finally start")
         # if content.send_audio_after_call:
         #     # !todo audio_url?
         #     try:
         #         await self.tg_client.send_audio(chat_id, audio=audio_file, progress=self._create_send_audio_handler)
         #     except Exception as ex:
         #         self._set_error('PocessCallSendAudioError', entity, ex)
-        #         log.error(entity.status_details)
-        #         return
-        log.debug(">>>>>>>>>>>>>>>>> end")
+                # entity.status = Status.ERROR
+                # entity.status_details = f"PocessCallSendAudioError: {type(ex)}:{ex}"
+                # log.error(f"PocessCallSendAudioError: chat_id={entity.chat_id}, id={entity.id}, error={type(ex)}:{ex}")
+                # return
         if content.message_after:
             message_entity = MessageEntity(chat_id=chat_id, content=content.message_after)
             await self.process_message(message_entity)
@@ -82,11 +82,15 @@ class TgCallsSevice:
         chat_id = entity.chat_id
         content = entity.content
         try:
-            await self.tg_client.send_message(chat_id, content.text)
+            if  content.text:
+                await self.tg_client.send_message(chat_id, content.text)
+            if content.photo_url:            
+                await self.tg_client.send_photo(chat_id, content.photo_url)
             entity.status = Status.SUCCESS
         except Exception as ex:
-            self._set_error('PocessMessageError', entity, ex)
-            log.error(entity.status_details)
+            entity.status = Status.ERROR
+            entity.status_details = f"PocessMessageError: {type(ex)}:{ex}"
+            log.error(f"PocessMessageError: chat_id={entity.chat_id}, id={entity.id}, error={type(ex)}:{ex}")
 
 
     async def make_test_call(self, chat_id:int) -> CallEntity:
@@ -112,18 +116,6 @@ class TgCallsSevice:
         self.tg_calls_client = PyTgCalls(self.tg_client)
         await self.tg_calls_client.start()
         log.info("Connection to Telegram is successful")
-
-
-    def _set_error(self, error:str, entity: Union[CallEntity, MessageEntity], exeption: Exception):
-        message = f"{error}: chat_id={entity.chat_id}, id={entity.id}, error={type(exeption)}:{exeption}"
-        entity.status = Status.ERROR
-        entity.status_details = message
-
-
-    def _set_failed(self, fail:str, entity: Union[CallEntity, MessageEntity], exeption: Exception):
-        message = f"{fail}: chat_id={entity.chat_id}, id={entity.id}, error={type(exeption)}:{exeption}"
-        entity.status = Status.FAILED
-        entity.status_details = message
 
 
     def _create_call_handler(self, chat_id: int, event:Event):
